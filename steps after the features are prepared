@@ -1,0 +1,41 @@
+Dataset:
+The breast cancer Wisconsin (diagnostic) data set used here contains 31 columns
+and 569 entries (rows). It requires data cleaning. The categorical values of the column
+“diagnosis” have been changed to the binary values, that is “malignant” (cancerous)
+tumor has been changed to “1” and “benign” (non-cancerous) tumor has been changed
+to “0,” respectively. The data set is being normalized to bring its mean to 0 and
+standard deviation to 1. The outliers have been removed to get an evenly distributed
+data set (Figs. 10 and 11).
+Now the data set is ready to apply KNN [14] and SVM [15] algorithm, respectively.
+
+MODEL:
+For model we are going to choose between two classifiers known as KNN(K-Nearest Neighbours)&
+SVM(Support Vector Machine).
+FIRST TRAIN ON BOTH AND CHOOSE THE ONE WITH HIGHER ACCURACY.
+
+X_train:contains 70% of Dataset.
+X_test:contains the rest 30%.
+
+steps involved for model training :
+PRINCIPAL COMPONENT ANALYSIS
+choose the correct no. of principal component features so as to maximize accuracy with 
+KNN model .
+
+
+PERFORMANCE EVALUATION
+we are going to use a confusion matrix ,which is generally used for classifiers.
+
+RESULTS
+The following is obtained for tracing the contours (Fig. 17).
+It is observed that after thresholding the nuclei are segmented. After that finding the contours and tracing them on the grayscale image, the nuclei are distinctly
+separated. After getting the nuclei, we apply the above steps to obtain the features
+values.
+We find a scatter plot where we take y-axis to be set to zero x-axis has been taken
+to be the feature values obtained. Following scatter plot shows a plot using two values
+for each feature: one by using the mean of all values of all columns and the second
+one by using the values obtained by image processing techniques. It is observed that
+the graph is almost overlapping except for at two points (shown by orange and blue
+color, respectively). This confirms that the methodology used here is almost accurate
+(Fig. 18).
+Hence, we finally apply the obtained feature values to the proposed model. This
+confirms that the affected tumor is “BENIGN,” that is “non–cancerous.”
