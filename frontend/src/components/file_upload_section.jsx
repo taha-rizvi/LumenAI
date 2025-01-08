@@ -13,7 +13,7 @@ function FileUpload() {
       className="space-y-8 divide-y divide-gray-200"
     >
       <div className="space-y-8 divide-y divide-gray-200 sm:space-y-5">
-        <h2 className="text-lg leading-6 font-medium text-gray-900">
+        <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
           Upload your File here.
         </h2>
 

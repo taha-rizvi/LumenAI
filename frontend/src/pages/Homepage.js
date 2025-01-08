@@ -1,10 +1,10 @@
 import React from "react";
-import Header from "../components/Header";
-import HeroSection from "../components/hero_section";
-import Features from "../components/features";
-import HowItWorks from "../components/HowItWorks";
-import FileUpload from "../components/file_upload_section";
-import Footer from "../components/Footer";
+import Header from "../components/Header.jsx";
+import HeroSection from "../components/hero_section.jsx";
+import Features from "../components/features.jsx";
+import HowItWorks from "../components/HowItWorks.jsx";
+import FileUpload from "../components/file_upload_section.jsx";
+import Footer from "../components/Footer.jsx";
 function Homepage() {
   return (
     <div>
