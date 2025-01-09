@@ -7,7 +7,7 @@ import numpy as np
 import sklearn
 from sklearn.model_selection import train_test_split
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-train_dataset=pd.read_csv('..\data\wdbc.csv',header=None)
+train_dataset=pd.read_csv('./datasets/breast+cancer+wisconsin+diagnostic/wdbc.csv',header=None)
 column_names= ['ID', 'Diagnosis'] + [
     'Radius (mean)', 'Texture (mean)', 'Perimeter (mean)', 'Area (mean)', 
     'Smoothness (mean)', 'Compactness (mean)', 'Concavity (mean)', 'Concave points (mean)', 
@@ -104,5 +104,5 @@ KNN.fit(train_features,y_train)
 preds_k=KNN.predict(test_features)
 accuracyk=accuracy_score(y_test,preds_k)
 print(f"the KNN accuracy is:{accuracyk*100:.2f}%")
-with open('.\\trained_model.pkl', 'wb') as f:
+with open('./models/trained_model.pkl', 'wb') as f:
     pickle.dump(model, f)

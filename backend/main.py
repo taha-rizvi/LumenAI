@@ -1,5 +1,5 @@
 from flask import Flask,request,jsonify
-from torch_utils import transform_image,get_prediction
+from utils.torch_utils import transform_image,get_prediction
 app=Flask(__name__)
 ALLOWED_EXTENSIONS={'jpg','png','jpeg'}
 def allowed_file(filename):

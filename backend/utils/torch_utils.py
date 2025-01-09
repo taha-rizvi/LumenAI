@@ -3,7 +3,7 @@ import cv2
 import torch
 import torch.nn as nn
 import pickle
-from feedforward import SimpleNN
+from models.feedforward import SimpleNN
 
 def calculate_fractal_dimension(contour, scales=[2, 4, 8, 16]):
         """Calculate the fractal dimension of a contour using coastline approximation.
@@ -14,6 +14,8 @@ def calculate_fractal_dimension(contour, scales=[2, 4, 8, 16]):
         Returns:
         float: Fractal dimension of the contour."""
         try:
+            if len(contour) ==0:
+                return 0
             perimeter=cv2.arcLength(contour,True)
             if perimeter==0:
                 return 0
@@ -22,21 +24,23 @@ def calculate_fractal_dimension(contour, scales=[2, 4, 8, 16]):
                 downsampled=contour[::scale]
                 approx_length=np.sum(np.sqrt(np.diff(downsampled.squeeze())**2))
                 lengths.append(approx_length) 
-            if np.any(lengths):
-                log_scales=-np.log(scales)
+            if lengths:
+                log_scales=-np.log(scales[:len(lengths)])
                 log_lengths=np.log(np.array(lengths) +1e-10 )
+                slope,_=np.polyfit(log_scales,log_lengths,1)
+                return slope+1
             else:
-                log_lengths=np.array([])   
-            slope,_=np.polyfit(log_scales,log_lengths,1)
+                return 0   
+            
                 
-            return slope + 1
+            
         except Exception as e:
             print(f"error in calculate fractal dimension:{e}")
             return 0
 def stats_calculator(property):
         try:
             if isinstance(property, (list, np.ndarray)):
-                property = np.array(property)
+                property = np.array(property,dtype=float)
                 if len(property)>0:
                     mean_property=np.mean(property)
                     std_property=np.std(property)
@@ -110,7 +114,7 @@ def transform_image(images_bytes):
                 reflected_polygon=cv2.convexHull(reflected_contour)
                 _,intersection_area=cv2.intersectConvexConvex(original_polygon,reflected_polygon)
                 try:
-                    if np.all(area)>0 and np.all(intersection_area) is not None:
+                    if area>0 and intersection_area is not None:
                         symmetry=intersection_area/area
                     else:
                         symmetry=0
@@ -155,16 +159,24 @@ def transform_image(images_bytes):
             areas.append(0)
             perimeters.append(0)
 
-        try:
+        
         # Concave points
         # Simplify the contour to ensure it's valid
-            epsilon = 0.04 * cv2.arcLength(contour, True)  # Approximation accuracy factor
-            approx_contour = cv2.approxPolyDP(contour, epsilon, True)
-            hull = cv2.convexHull(approx_contour, returnPoints=False)
-            defects = cv2.convexityDefects(contour, hull)
+        epsilon = 0.04 * cv2.arcLength(contour, True)  # Approximation accuracy factor
+        approx_contour = cv2.approxPolyDP(contour, epsilon, True)
+        try:
+            if len(approx_contour) >=4:
+                hull = cv2.convexHull(approx_contour, returnPoints=False)
+                if len(hull) >=3: 
+                    defects = cv2.convexityDefects(contour, hull)
+                else:
+                    defects=None
+            else:
+                defects=None
         except cv2.error as e:
-            print(f"Error in convexityDefects: {e}")
-            defects = None
+            print(f"Error in convexityDefects:{e}")
+            defects=None        
+        
         if defects is not None:
             concave_points = defects.shape[0]
         else:
@@ -213,7 +225,7 @@ def transform_image(images_bytes):
 
 
 # Load the model
-with open('.\\trained_model.pkl', 'rb') as f:
+with open('.//models//trained_model.pkl', 'rb') as f:
     model = pickle.load(f)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)    

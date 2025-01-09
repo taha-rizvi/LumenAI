@@ -1,11 +1,36 @@
 import React, { useState } from "react";
+import axios from "axios";
 function FileUpload() {
   const [file, setFile] = useState(null);
+  const [response, setResponse] = useState("");
   const HandleFileChange = (event) => {
     setFile(event.target.files[0]);
   };
-  const HandleSubmit = (event) => {
+  const HandleSubmit = async (event) => {
     event.preventDefault();
+    if (!file) {
+      alert("Please select a file first.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/predict",
+        formData,
+        {
+          headers: {
+            "Content-Type": "mutipart/form-data",
+          },
+        }
+      );
+      if (response.data) {
+        setResponse(response.data.prediction);
+      }
+    } catch (error) {
+      console.error("Error uploading the file:", error);
+      setResponse("An error occured.Please try again.");
+    }
   };
   return (
     <form
@@ -77,8 +102,9 @@ function FileUpload() {
               type="submit"
               className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Save
+              Upload and Predict
             </button>
+            {response && <p>Prediciton: {response}</p>}
           </div>
         </div>
       </div>
