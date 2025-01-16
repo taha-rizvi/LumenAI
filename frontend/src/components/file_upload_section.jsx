@@ -29,7 +29,11 @@ function FileUpload() {
       }
     } catch (error) {
       console.error("Error uploading the file:", error);
-      setResponse("An error occured.Please try again.");
+      if (error.response && error.response.data && error.response.data.error) {
+        setResponse(`Error: ${error.response.data.error}`);
+      } else {
+        setResponse("An error occurred. Please try again.");
+      }
     }
   };
   return (

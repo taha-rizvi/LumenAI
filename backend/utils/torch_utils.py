@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import pickle
 from models.feedforward import SimpleNN
+from sklearn.preprocessing import MinMaxScaler
 
 def calculate_fractal_dimension(contour, scales=[2, 4, 8, 16]):
         """Calculate the fractal dimension of a contour using coastline approximation.
@@ -40,8 +41,9 @@ def calculate_fractal_dimension(contour, scales=[2, 4, 8, 16]):
 def stats_calculator(property):
         try:
             if isinstance(property, (list, np.ndarray)):
-                property = np.array(property,dtype=float)
-                if len(property)>0:
+                property = [p for p in property if np.isscalar(p)]  # Filter non-scalars
+                property = np.array(property,dtype=np.float64)
+                if property.size>0:
                     mean_property=np.mean(property)
                     std_property=np.std(property)
                     max_property=max(property)
@@ -114,8 +116,20 @@ def transform_image(images_bytes):
                 reflected_polygon=cv2.convexHull(reflected_contour)
                 _,intersection_area=cv2.intersectConvexConvex(original_polygon,reflected_polygon)
                 try:
+                     # Ensure `area` and `intersection_area` are scalars or properly reduced
+                    if isinstance(area, np.ndarray):
+                        area = np.sum(area)  # Replace with .item() if array is single-valued
+                    if isinstance(intersection_area, np.ndarray):
+                        intersection_area = np.sum(intersection_area)
+
                     if area>0 and intersection_area is not None:
+                        max_value = 1e6  # Define a maximum limit to prevent overflows
                         symmetry=intersection_area/area
+                        intersection_area = min(intersection_area, max_value)
+                        # Use safe division to prevent overflow or division by zero
+                        
+                        symmetry = intersection_area / (area + 1e-10)
+                        
                     else:
                         symmetry=0
                     symmetry_values.append(symmetry)
@@ -167,6 +181,7 @@ def transform_image(images_bytes):
         try:
             if len(approx_contour) >=4:
                 hull = cv2.convexHull(approx_contour, returnPoints=False)
+                hull[::-1].sort(axis=0)
                 if len(hull) >=3: 
                     defects = cv2.convexityDefects(contour, hull)
                 else:
@@ -220,6 +235,7 @@ def transform_image(images_bytes):
     # If radii cannot be calculated, append default values
         mean_radius,std_radius,max_radius,mean_smoothness,std_smoothness,max_smoothness=0.0,0.0,0.0,0.0,0.0,0.0
     features.extend([mean_radius,std_radius,max_radius,mean_texture,std_dev_texture,max_texture_value,mean_area,std_area,max_area,mean_perimeter,std_perimeter,max_perimeter,mean_smoothness,std_smoothness,max_smoothness,mean_compactness,std_compactness,max_compactness,mean_concavity,std_concavity,max_concavity,mean_concave_points,std_concave_points,max_concave_points,symmetry_mean,symmetry_std,symmetry_max,mean_fractal_dimension,std_fractal_dimension,max_fractal_dimension])
+    
     feature_tensor = torch.tensor(features, dtype=torch.float32).unsqueeze(0)
     return feature_tensor
 
