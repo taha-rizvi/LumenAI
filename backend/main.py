@@ -17,6 +17,7 @@ def predict():
             tensor=transform_image(img_bytes)
             print(f"the tensor is :{tensor}")
             prediction=get_prediction(tensor)
+            print(f"Prediction result: {prediction}")
             if prediction is None:
                 raise ValueError("Prediction returned None.")
             

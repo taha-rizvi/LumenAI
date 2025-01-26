@@ -3,8 +3,10 @@ import axios from "axios";
 function FileUpload() {
   const [file, setFile] = useState(null);
   const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
   const HandleFileChange = (event) => {
     setFile(event.target.files[0]);
+    setResponse(""); // Clear previous response when a new file is selected
   };
   const HandleSubmit = async (event) => {
     event.preventDefault();
@@ -14,26 +16,36 @@ function FileUpload() {
     }
     const formData = new FormData();
     formData.append("file", file);
+    setLoading(true); // Show loading indicator
+    setResponse(""); // Clear previous response
     try {
       const response = await axios.post(
         "http://localhost:5000/predict",
         formData,
         {
           headers: {
-            "Content-Type": "mutipart/form-data",
+            "Content-Type": "multipart/form-data",
           },
         }
       );
-      if (response.data) {
-        setResponse(response.data.prediction);
+      if (response.data && response.data.prediction) {
+        setResponse(`Prediction: ${response.data.prediction}`);
+      } else {
+        setResponse("No prediction found in the response.");
       }
     } catch (error) {
       console.error("Error uploading the file:", error);
       if (error.response && error.response.data && error.response.data.error) {
         setResponse(`Error: ${error.response.data.error}`);
+      } else if (error.message === "Network Error") {
+        setResponse(
+          "Error: Unable to connect to the server. Please try again later."
+        );
       } else {
         setResponse("An error occurred. Please try again.");
       }
+    } finally {
+      setLoading(false); // Hide loading indicator
     }
   };
   return (
@@ -105,12 +117,21 @@ function FileUpload() {
             <button
               type="submit"
               className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={loading} // Disable button when loading
             >
-              Upload and Predict
+              {loading ? "Uploading..." : "Upload and Predict"}
             </button>
-            {response && <p>Prediciton: {response}</p>}
           </div>
         </div>
+        {response && (
+          <p
+            className={`mt-4 text-lg ${
+              response.startsWith("Error") ? "text-red-600" : "text-green-600"
+            }`}
+          >
+            {response}
+          </p>
+        )}
       </div>
     </form>
   );

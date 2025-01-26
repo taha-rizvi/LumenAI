@@ -56,9 +56,7 @@ def stats_calculator(property):
             print(f"Error in stats_calculator: {e}")
             return 0.0,0.0,0.0
 def transform_image(images_bytes):
-    
-      
-            
+          
     img_array=np.frombuffer(images_bytes,dtype=np.uint8)
     image=cv2.imdecode(img_array,cv2.IMREAD_COLOR)
     if len(image.shape) == 2:  # Check if the image is already grayscale
@@ -69,8 +67,8 @@ def transform_image(images_bytes):
     threshold_value = 127  # Adjust this value as necessary
     max_value = 255
     _, thresholded_image = cv2.threshold(grayscale_image, threshold_value, max_value, cv2.THRESH_BINARY_INV)
-
     contours,_=cv2.findContours(thresholded_image,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    contour_debug_image = cv2.cvtColor(grayscale_image, cv2.COLOR_GRAY2BGR)
     mask = np.zeros_like(grayscale_image)
     cv2.drawContours(mask, contours, -1, (255), thickness=cv2.FILLED)
     masked_image = cv2.bitwise_and(grayscale_image, grayscale_image, mask=mask)
@@ -90,6 +88,7 @@ def transform_image(images_bytes):
     concave_points_list = []
     symmetry_values=[]
     fractal_dimensions=[]
+    min_area = 50
     for contour in contours:
          
          
@@ -139,11 +138,10 @@ def transform_image(images_bytes):
                 symmetry_values.append(symmetry)    
             else:
                 symmetry_values.append(0)            
-            if area > 0:  # Avoid division by zero
+            if area > min_area:  # Avoid division by zero
                 # Minimum enclosing circle
                 (x, y), radius = cv2.minEnclosingCircle(contour)
                 circle_area = np.pi * (radius ** 2)
-
                 # Append radius
                 radii.append(radius)
 
@@ -235,7 +233,7 @@ def transform_image(images_bytes):
     # If radii cannot be calculated, append default values
         mean_radius,std_radius,max_radius,mean_smoothness,std_smoothness,max_smoothness=0.0,0.0,0.0,0.0,0.0,0.0
     features.extend([mean_radius,std_radius,max_radius,mean_texture,std_dev_texture,max_texture_value,mean_area,std_area,max_area,mean_perimeter,std_perimeter,max_perimeter,mean_smoothness,std_smoothness,max_smoothness,mean_compactness,std_compactness,max_compactness,mean_concavity,std_concavity,max_concavity,mean_concave_points,std_concave_points,max_concave_points,symmetry_mean,symmetry_std,symmetry_max,mean_fractal_dimension,std_fractal_dimension,max_fractal_dimension])
-    
+    print(mean_radius)
     feature_tensor = torch.tensor(features, dtype=torch.float32).unsqueeze(0)
     return feature_tensor
 
@@ -261,6 +259,7 @@ def get_prediction(tensor):
             return 'M'  # Malignant
         else:
             return 'N'  # Benign
+        
     except Exception as e:
         print(f"Error during prediction: {e}")
         return None
