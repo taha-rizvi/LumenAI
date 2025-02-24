@@ -1,6 +1,9 @@
+from flask_cors import CORS
 from flask import Flask,request,jsonify
 from utils.torch_utils import transform_image,get_prediction
 app=Flask(__name__)
+CORS(app, origins=["http://localhost:3000"])
+
 ALLOWED_EXTENSIONS={'jpg','png','jpeg'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.',1)[1].lower()

@@ -66,8 +66,15 @@ def transform_image(images_bytes):
 
     threshold_value = 127  # Adjust this value as necessary
     max_value = 255
-    _, thresholded_image = cv2.threshold(grayscale_image, threshold_value, max_value, cv2.THRESH_BINARY_INV)
-    contours,_=cv2.findContours(thresholded_image,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    _, thresholded_image = cv2.threshold(grayscale_image, threshold_value, max_value, cv2.THRESH_BINARY)
+    kernel = np.ones((5,5), np.uint8)
+    cleaned_image = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel)
+    cleaned_image = cv2.morphologyEx(cleaned_image, cv2.MORPH_CLOSE, kernel)
+
+    # cv2.imshow("cleaned image", cleaned_image)  # Show thresholded image
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    contours,_=cv2.findContours(cleaned_image,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
     contour_debug_image = cv2.cvtColor(grayscale_image, cv2.COLOR_GRAY2BGR)
     mask = np.zeros_like(grayscale_image)
     cv2.drawContours(mask, contours, -1, (255), thickness=cv2.FILLED)
@@ -93,8 +100,10 @@ def transform_image(images_bytes):
          
          
         if len(contour) > 1:  # Valid contour
+            print("the len of contour: ",len(contour))
             # Calculate contour area and perimeter
             area = cv2.contourArea(contour)
+            print("the area:",area)
             perimeter = cv2.arcLength(contour, True)
             moments=cv2.moments(contour)
             try:
@@ -162,6 +171,7 @@ def transform_image(images_bytes):
 
                 # Append contour area and perimeter
                 areas.append(area)
+               
                 perimeters.append(perimeter)
 
         else:  # For contours with zero area
@@ -170,8 +180,10 @@ def transform_image(images_bytes):
             concavity_values.append(0)
             areas.append(0)
             perimeters.append(0)
-
-        
+        print("areas:",areas)    
+        print("the compactness:",compactness_values)    
+        scaler_compactness = MinMaxScaler(feature_range=(0, 1))
+        scaler_compactness.fit(np.array(compactness_values).reshape(-1,1))
         # Concave points
         # Simplify the contour to ensure it's valid
         epsilon = 0.04 * cv2.arcLength(contour, True)  # Approximation accuracy factor
@@ -217,14 +229,17 @@ def transform_image(images_bytes):
     mean_concave_points,std_concave_points,max_concave_points=stats_calculator(concave_points_list)
     mean_fractal_dimension,std_fractal_dimension,max_fractal_dimension=stats_calculator(fractal_dimensions)
     if radii:
+        print("the radii is :",radii)
         local_smoothness = []
         window_size = 5 
         for i in range(len(radii) - window_size + 1):
             window = radii[i:i + window_size]
             local_std_dev = np.std(window)  # Calculate standard deviation of the local window
             local_smoothness.append(local_std_dev)
-
-        
+            print("the local std dev is:",local_std_dev)
+        print("the smoothness",local_smoothness)
+        scaler_smoothness = MinMaxScaler(feature_range=(0, 1))
+        scaler_smoothness.fit(np.array(local_smoothness).reshape(-1,1))
         mean_radius,std_radius ,max_radius = stats_calculator(radii) 
         mean_smoothness,std_smoothness,max_smoothness=stats_calculator(local_smoothness)
         
@@ -232,7 +247,9 @@ def transform_image(images_bytes):
     else:
     # If radii cannot be calculated, append default values
         mean_radius,std_radius,max_radius,mean_smoothness,std_smoothness,max_smoothness=0.0,0.0,0.0,0.0,0.0,0.0
-    features.extend([mean_radius,std_radius,max_radius,mean_texture,std_dev_texture,max_texture_value,mean_area,std_area,max_area,mean_perimeter,std_perimeter,max_perimeter,mean_smoothness,std_smoothness,max_smoothness,mean_compactness,std_compactness,max_compactness,mean_concavity,std_concavity,max_concavity,mean_concave_points,std_concave_points,max_concave_points,symmetry_mean,symmetry_std,symmetry_max,mean_fractal_dimension,std_fractal_dimension,max_fractal_dimension])
+    scaled_mean_compactness = scaler_compactness.transform([[mean_compactness]])[0][0]
+    scaled_mean_smoothness = scaler_smoothness.transform([[mean_smoothness]])[0][0]
+    features.extend([mean_radius,mean_texture,mean_perimeter,mean_area,scaled_mean_smoothness,scaled_mean_compactness,mean_concavity,mean_concave_points,symmetry_mean,mean_fractal_dimension,std_radius,std_dev_texture,std_perimeter,std_area,std_smoothness,std_compactness,std_concavity,std_concave_points,symmetry_std,std_fractal_dimension,max_radius,max_texture_value,max_perimeter,max_area,max_smoothness,max_compactness,max_concavity,max_concave_points,symmetry_max,max_fractal_dimension])
     print(mean_radius)
     feature_tensor = torch.tensor(features, dtype=torch.float32).unsqueeze(0)
     return feature_tensor
